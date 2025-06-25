@@ -1,10 +1,10 @@
 use alloy::primitives::B256;
 use serde;
 
+use crate::l1_action;
 use crate::types::requests::{
     BuilderInfo, CancelRequest, CancelRequestCloid, ModifyRequest, OrderRequest,
 };
-use crate::l1_action;
 
 // User Actions (with HyperliquidTransaction: prefix)
 
@@ -21,7 +21,8 @@ pub struct UsdSend {
 }
 
 impl crate::types::eip712::HyperliquidAction for UsdSend {
-    const TYPE_STRING: &'static str = "UsdSend(string hyperliquidChain,string destination,string amount,uint64 time)";
+    const TYPE_STRING: &'static str =
+        "UsdSend(string hyperliquidChain,string destination,string amount,uint64 time)";
     const USE_PREFIX: bool = true;
 
     fn chain_id(&self) -> Option<u64> {
@@ -53,7 +54,8 @@ pub struct Withdraw {
 }
 
 impl crate::types::eip712::HyperliquidAction for Withdraw {
-    const TYPE_STRING: &'static str = "Withdraw(string hyperliquidChain,string destination,string amount,uint64 time)";
+    const TYPE_STRING: &'static str =
+        "Withdraw(string hyperliquidChain,string destination,string amount,uint64 time)";
     const USE_PREFIX: bool = true;
 
     fn chain_id(&self) -> Option<u64> {
@@ -119,19 +121,25 @@ pub struct ApproveAgent {
     pub nonce: u64,
 }
 
-pub(crate) fn serialize_address<S>(address: &alloy::primitives::Address, serializer: S) -> Result<S::Ok, S::Error>
+pub(crate) fn serialize_address<S>(
+    address: &alloy::primitives::Address,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
-    serializer.serialize_str(&format!("{:#x}", address))
+    serializer.serialize_str(&format!("{address:#x}"))
 }
 
-pub(crate) fn serialize_chain_id<S>(chain_id: &u64, serializer: S) -> Result<S::Ok, S::Error>
+pub(crate) fn serialize_chain_id<S>(
+    chain_id: &u64,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
     // Serialize as hex string to match SDK format
-    serializer.serialize_str(&format!("{:#x}", chain_id))
+    serializer.serialize_str(&format!("{chain_id:#x}"))
 }
 
 impl crate::types::eip712::HyperliquidAction for ApproveAgent {

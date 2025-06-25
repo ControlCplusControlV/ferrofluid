@@ -2,10 +2,10 @@
 
 #[cfg(test)]
 mod tests {
+    use alloy::primitives::{address, keccak256};
     use ferrofluid::types::actions::ApproveAgent;
     use ferrofluid::types::eip712::HyperliquidAction;
-    use alloy::primitives::{address, keccak256};
-    
+
     #[test]
     fn test_approve_agent_type_hash() {
         let expected = keccak256(
@@ -13,7 +13,7 @@ mod tests {
         );
         assert_eq!(ApproveAgent::type_hash(), expected);
     }
-    
+
     #[test]
     fn test_approve_agent_serialization() {
         let action = ApproveAgent {
@@ -23,11 +23,11 @@ mod tests {
             agent_name: Some("Test Agent".to_string()),
             nonce: 1234567890,
         };
-        
+
         // Serialize to JSON
         let json = serde_json::to_string(&action).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
-        
+
         // Check that address is serialized as hex string
         assert_eq!(
             parsed["agentAddress"].as_str().unwrap(),
@@ -37,7 +37,7 @@ mod tests {
         assert_eq!(parsed["agentName"].as_str().unwrap(), "Test Agent");
         assert_eq!(parsed["nonce"].as_u64().unwrap(), 1234567890);
     }
-    
+
     #[test]
     fn test_approve_agent_struct_hash() {
         let action = ApproveAgent {
@@ -47,7 +47,7 @@ mod tests {
             agent_name: None,
             nonce: 1690393044548,
         };
-        
+
         // Test that struct hash is computed
         let struct_hash = action.struct_hash();
         // Just verify it's not zero

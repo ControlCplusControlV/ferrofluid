@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
+
 use uuid::Uuid;
 
 use crate::types::requests::OrderRequest;
@@ -42,7 +43,7 @@ impl OrderTracker {
             status: OrderStatus::Pending,
             response: None,
         };
-        
+
         let mut orders = self.orders.write().unwrap();
         orders.insert(cloid, tracked);
     }

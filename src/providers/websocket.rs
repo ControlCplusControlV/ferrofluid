@@ -1,22 +1,22 @@
 //! WebSocket provider for real-time market data and user events
 
 use std::sync::{
-    Arc,
     atomic::{AtomicU32, Ordering},
+    Arc,
 };
 
 use dashmap::DashMap;
-use fastwebsockets::{Frame, OpCode, Role, WebSocket, handshake};
+use fastwebsockets::{handshake, Frame, OpCode, Role, WebSocket};
 use http_body_util::Empty;
-use hyper::{Request, StatusCode, body::Bytes, header, upgrade::Upgraded};
+use hyper::{body::Bytes, header, upgrade::Upgraded, Request, StatusCode};
 use hyper_util::rt::TokioIo;
 use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 
 use crate::{
-    Network,
     errors::HyperliquidError,
     types::ws::{Message, Subscription, WsRequest},
     types::Symbol,
+    Network,
 };
 
 pub type SubscriptionId = u32;
@@ -81,13 +81,13 @@ impl RawWsProvider {
 
         let uri = url
             .parse::<hyper::Uri>()
-            .map_err(|e| HyperliquidError::WebSocket(format!("Invalid URL: {}", e)))?;
+            .map_err(|e| HyperliquidError::WebSocket(format!("Invalid URL: {e}")))?;
 
         // Create HTTPS connector with proper configuration
         let https = HttpsConnectorBuilder::new()
             .with_native_roots()
             .map_err(|e| {
-                HyperliquidError::WebSocket(format!("Failed to load native roots: {}", e))
+                HyperliquidError::WebSocket(format!("Failed to load native roots: {e}"))
             })?
             .https_only()
             .enable_http1()
@@ -111,11 +111,11 @@ impl RawWsProvider {
             .header(header::SEC_WEBSOCKET_KEY, handshake::generate_key())
             .body(Empty::new())
             .map_err(|e| {
-                HyperliquidError::WebSocket(format!("Request build failed: {}", e))
+                HyperliquidError::WebSocket(format!("Request build failed: {e}"))
             })?;
 
         let res = client.request(req).await.map_err(|e| {
-            HyperliquidError::WebSocket(format!("HTTP request failed: {}", e))
+            HyperliquidError::WebSocket(format!("HTTP request failed: {e}"))
         })?;
 
         if res.status() != StatusCode::SWITCHING_PROTOCOLS {
@@ -127,7 +127,7 @@ impl RawWsProvider {
 
         let upgraded = hyper::upgrade::on(res)
             .await
-            .map_err(|e| HyperliquidError::WebSocket(format!("Upgrade failed: {}", e)))?;
+            .map_err(|e| HyperliquidError::WebSocket(format!("Upgrade failed: {e}")))?;
 
         Ok(WebSocket::after_handshake(
             TokioIo::new(upgraded),
@@ -184,7 +184,7 @@ impl RawWsProvider {
         ws.write_frame(Frame::text(payload.into_bytes().into()))
             .await
             .map_err(|e| {
-                HyperliquidError::WebSocket(format!("Failed to send subscription: {}", e))
+                HyperliquidError::WebSocket(format!("Failed to send subscription: {e}"))
             })?;
 
         // Create channel for this subscription
@@ -215,8 +215,7 @@ impl RawWsProvider {
                 .await
                 .map_err(|e| {
                     HyperliquidError::WebSocket(format!(
-                        "Failed to send unsubscribe: {}",
-                        e
+                        "Failed to send unsubscribe: {e}"
                     ))
                 })?;
         }
@@ -238,7 +237,7 @@ impl RawWsProvider {
         ws.write_frame(Frame::text(payload.into_bytes().into()))
             .await
             .map_err(|e| {
-                HyperliquidError::WebSocket(format!("Failed to send ping: {}", e))
+                HyperliquidError::WebSocket(format!("Failed to send ping: {e}"))
             })?;
 
         Ok(())
@@ -314,6 +313,7 @@ impl Drop for RawWsProvider {
 // ==================== Enhanced WebSocket Provider ====================
 
 use std::time::{Duration, Instant};
+
 use tokio::sync::Mutex;
 use tokio::time::sleep;
 
@@ -355,7 +355,7 @@ struct ManagedSubscription {
     subscription: Subscription,
     tx: UnboundedSender<Message>,
     #[allow(dead_code)]
-    created_at: Instant,  // For future use: subscription age tracking
+    created_at: Instant, // For future use: subscription age tracking
 }
 
 /// Managed WebSocket provider with automatic keep-alive and reconnection
@@ -375,10 +375,13 @@ pub struct ManagedWsProvider {
 
 impl ManagedWsProvider {
     /// Connect with custom configuration
-    pub async fn connect(network: Network, config: WsConfig) -> Result<Arc<Self>, HyperliquidError> {
+    pub async fn connect(
+        network: Network,
+        config: WsConfig,
+    ) -> Result<Arc<Self>, HyperliquidError> {
         // Create initial connection
         let raw_provider = RawWsProvider::connect(network).await?;
-        
+
         let provider = Arc::new(Self {
             network,
             inner: Arc::new(Mutex::new(Some(raw_provider))),
@@ -386,7 +389,7 @@ impl ManagedWsProvider {
             config,
             next_id: Arc::new(AtomicU32::new(1)),
         });
-        
+
         // Start keep-alive task if configured
         if provider.config.ping_interval > Duration::ZERO {
             let provider_clone = provider.clone();
@@ -394,7 +397,7 @@ impl ManagedWsProvider {
                 provider_clone.keepalive_loop().await;
             });
         }
-        
+
         // Start reconnection task if configured
         if provider.config.auto_reconnect {
             let provider_clone = provider.clone();
@@ -402,26 +405,31 @@ impl ManagedWsProvider {
                 provider_clone.reconnect_loop().await;
             });
         }
-        
+
         Ok(provider)
     }
-    
+
     /// Connect with default configuration
-    pub async fn connect_with_defaults(network: Network) -> Result<Arc<Self>, HyperliquidError> {
+    pub async fn connect_with_defaults(
+        network: Network,
+    ) -> Result<Arc<Self>, HyperliquidError> {
         Self::connect(network, WsConfig::default()).await
     }
-    
+
     /// Check if currently connected
     pub async fn is_connected(&self) -> bool {
         let inner = self.inner.lock().await;
         inner.as_ref().map(|p| p.is_connected()).unwrap_or(false)
     }
-    
+
     /// Get mutable access to the raw provider
-    pub async fn raw(&self) -> Result<tokio::sync::MutexGuard<'_, Option<RawWsProvider>>, HyperliquidError> {
+    pub async fn raw(
+        &self,
+    ) -> Result<tokio::sync::MutexGuard<'_, Option<RawWsProvider>>, HyperliquidError>
+    {
         Ok(self.inner.lock().await)
     }
-    
+
     /// Subscribe to L2 order book updates with automatic replay on reconnect
     pub async fn subscribe_l2_book(
         &self,
@@ -433,7 +441,7 @@ impl ManagedWsProvider {
         };
         self.subscribe(subscription).await
     }
-    
+
     /// Subscribe to trades with automatic replay on reconnect
     pub async fn subscribe_trades(
         &self,
@@ -445,33 +453,33 @@ impl ManagedWsProvider {
         };
         self.subscribe(subscription).await
     }
-    
+
     /// Subscribe to all mid prices with automatic replay on reconnect
     pub async fn subscribe_all_mids(
         &self,
     ) -> Result<(SubscriptionId, UnboundedReceiver<Message>), HyperliquidError> {
         self.subscribe(Subscription::AllMids).await
     }
-    
+
     /// Generic subscription with automatic replay on reconnect
     pub async fn subscribe(
         &self,
         subscription: Subscription,
     ) -> Result<(SubscriptionId, UnboundedReceiver<Message>), HyperliquidError> {
         let mut inner = self.inner.lock().await;
-        let raw_provider = inner.as_mut().ok_or_else(|| {
-            HyperliquidError::WebSocket("Not connected".to_string())
-        })?;
-        
+        let raw_provider = inner
+            .as_mut()
+            .ok_or_else(|| HyperliquidError::WebSocket("Not connected".to_string()))?;
+
         // Subscribe using the raw provider
         let (_raw_id, rx) = raw_provider.subscribe(subscription.clone()).await?;
-        
+
         // Generate our own ID for tracking
         let managed_id = self.next_id.fetch_add(1, Ordering::SeqCst);
-        
+
         // Create channel for managed subscription
         let (tx, managed_rx) = mpsc::unbounded_channel();
-        
+
         // Store subscription for replay
         self.subscriptions.insert(
             managed_id,
@@ -481,7 +489,7 @@ impl ManagedWsProvider {
                 created_at: Instant::now(),
             },
         );
-        
+
         // Forward messages from raw to managed
         let subscriptions = self.subscriptions.clone();
         tokio::spawn(async move {
@@ -494,38 +502,38 @@ impl ManagedWsProvider {
             // Clean up when channel closes
             subscriptions.remove(&managed_id);
         });
-        
+
         Ok((managed_id, managed_rx))
     }
-    
+
     /// Unsubscribe and stop automatic replay
     pub async fn unsubscribe(&self, id: SubscriptionId) -> Result<(), HyperliquidError> {
         // Remove from our tracking
         self.subscriptions.remove(&id);
-        
+
         // Note: We can't unsubscribe from the raw provider because we don't
         // track the mapping between our IDs and raw IDs. This is fine since
         // the subscription will be cleaned up on reconnect anyway.
-        
+
         Ok(())
     }
-    
+
     /// Start reading messages (must be called after connecting)
     pub async fn start_reading(&self) -> Result<(), HyperliquidError> {
         let mut inner = self.inner.lock().await;
-        let raw_provider = inner.as_mut().ok_or_else(|| {
-            HyperliquidError::WebSocket("Not connected".to_string())
-        })?;
+        let raw_provider = inner
+            .as_mut()
+            .ok_or_else(|| HyperliquidError::WebSocket("Not connected".to_string()))?;
         raw_provider.start_reading().await
     }
-    
+
     // Keep-alive loop
     async fn keepalive_loop(self: Arc<Self>) {
         let mut interval = tokio::time::interval(self.config.ping_interval);
-        
+
         loop {
             interval.tick().await;
-            
+
             let mut inner = self.inner.lock().await;
             if let Some(provider) = inner.as_mut() {
                 if provider.ping().await.is_err() {
@@ -536,60 +544,64 @@ impl ManagedWsProvider {
             }
         }
     }
-    
+
     // Reconnection loop
     async fn reconnect_loop(self: Arc<Self>) {
         let mut reconnect_attempts = 0u32;
         let mut current_delay = self.config.reconnect_delay;
-        
+
         loop {
             // Wait a bit before checking
             sleep(Duration::from_secs(1)).await;
-            
+
             // Check if we need to reconnect
             if !self.is_connected().await {
                 // Check max attempts
                 if let Some(max) = self.config.max_reconnect_attempts {
                     if reconnect_attempts >= max {
-                        eprintln!("Max reconnection attempts ({}) reached", max);
+                        eprintln!("Max reconnection attempts ({max}) reached");
                         break;
                     }
                 }
-                
+
                 println!("Attempting reconnection #{}", reconnect_attempts + 1);
-                
+
                 match RawWsProvider::connect(self.network).await {
                     Ok(mut new_provider) => {
                         // Start reading before replaying subscriptions
                         if let Err(e) = new_provider.start_reading().await {
-                            eprintln!("Failed to start reading after reconnect: {}", e);
+                            eprintln!("Failed to start reading after reconnect: {e}");
                             continue;
                         }
-                        
+
                         // Replay all subscriptions
                         let mut replay_errors = 0;
                         for entry in self.subscriptions.iter() {
-                            if let Err(e) = new_provider.subscribe(entry.subscription.clone()).await {
-                                eprintln!("Failed to replay subscription: {}", e);
+                            if let Err(e) =
+                                new_provider.subscribe(entry.subscription.clone()).await
+                            {
+                                eprintln!("Failed to replay subscription: {e}");
                                 replay_errors += 1;
                             }
                         }
-                        
+
                         if replay_errors == 0 {
                             // Success! Reset counters
                             *self.inner.lock().await = Some(new_provider);
                             reconnect_attempts = 0;
                             current_delay = self.config.reconnect_delay;
-                            println!("Reconnection successful, {} subscriptions replayed", 
-                                     self.subscriptions.len());
+                            println!(
+                                "Reconnection successful, {} subscriptions replayed",
+                                self.subscriptions.len()
+                            );
                         }
                     }
                     Err(e) => {
-                        eprintln!("Reconnection failed: {}", e);
-                        
+                        eprintln!("Reconnection failed: {e}");
+
                         // Wait before next attempt
                         sleep(current_delay).await;
-                        
+
                         // Update delay for next attempt
                         reconnect_attempts += 1;
                         if self.config.exponential_backoff {
@@ -603,7 +615,7 @@ impl ManagedWsProvider {
             }
         }
     }
-    
+
     // Handle disconnection
     async fn handle_disconnect(&self) {
         *self.inner.lock().await = None;

@@ -7,7 +7,7 @@ use http::{Method, Request};
 use http_body_util::{BodyExt, Full};
 use hyper::body::Bytes;
 use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
-use hyper_util::client::legacy::{Client, connect::HttpConnector};
+use hyper_util::client::legacy::{connect::HttpConnector, Client};
 use hyper_util::rt::TokioExecutor;
 use serde_json::json;
 
@@ -292,7 +292,7 @@ impl InfoProvider {
 
     // ==================== Builder Pattern Methods ====================
 
-    pub fn candles(&self, coin: impl Into<Symbol>) -> CandlesRequestBuilder {
+    pub fn candles(&self, coin: impl Into<Symbol>) -> CandlesRequestBuilder<'_> {
         CandlesRequestBuilder {
             provider: self,
             coin: coin.into(),
@@ -302,7 +302,7 @@ impl InfoProvider {
         }
     }
 
-    pub fn funding_history(&self, coin: impl Into<Symbol>) -> FundingHistoryBuilder {
+    pub fn funding_history(&self, coin: impl Into<Symbol>) -> FundingHistoryBuilder<'_> {
         FundingHistoryBuilder {
             provider: self,
             coin: coin.into(),

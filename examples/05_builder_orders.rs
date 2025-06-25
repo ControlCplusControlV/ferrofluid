@@ -1,6 +1,6 @@
 //! Example of using builder functionality for orders
 
-use alloy::primitives::{B256, address};
+use alloy::primitives::{address, B256};
 use alloy::signers::local::PrivateKeySigner;
 use ferrofluid::{providers::ExchangeProvider, signers::AlloySigner};
 
