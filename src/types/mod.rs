@@ -9,7 +9,7 @@ pub mod ws;
 
 // Re-export commonly used types
 pub use actions::*;
-pub use eip712::{EncodeEip712, HyperliquidAction, encode_value};
+pub use eip712::{encode_value, EncodeEip712, HyperliquidAction};
 pub use info_types::*;
 pub use requests::*;
 pub use responses::*;
