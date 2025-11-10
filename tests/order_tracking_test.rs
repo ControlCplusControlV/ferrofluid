@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use alloy::signers::local::PrivateKeySigner;
+    use alloy_signer_local::PrivateKeySigner;
     use ferrofluid::{
         constants::TIF_GTC, signers::AlloySigner, types::requests::OrderRequest,
         ExchangeProvider,

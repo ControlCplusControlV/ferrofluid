@@ -2,7 +2,7 @@
 
 #[cfg(test)]
 mod tests {
-    use alloy::primitives::{address, keccak256};
+    use alloy_primitives::{address, keccak256, B256};
     use ferrofluid::types::actions::ApproveAgent;
     use ferrofluid::types::eip712::HyperliquidAction;
 
@@ -51,6 +51,6 @@ mod tests {
         // Test that struct hash is computed
         let struct_hash = action.struct_hash();
         // Just verify it's not zero
-        assert_ne!(struct_hash, alloy::primitives::B256::ZERO);
+        assert_ne!(struct_hash, B256::ZERO);
     }
 }

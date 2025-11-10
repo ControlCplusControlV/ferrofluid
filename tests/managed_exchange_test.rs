@@ -1,6 +1,6 @@
 //! Tests for ManagedExchangeProvider
 
-use alloy::signers::local::PrivateKeySigner;
+use alloy_signer_local::PrivateKeySigner;
 use ferrofluid::{
     constants::*,
     providers::{ManagedExchangeProvider, OrderHandle},
@@ -12,7 +12,7 @@ use std::time::Duration;
 async fn test_managed_provider_creation() {
     // Initialize CryptoProvider for rustls
     rustls::crypto::CryptoProvider::install_default(
-        rustls::crypto::ring::default_provider(),
+        rustls::crypto::aws_lc_rs::default_provider(),
     )
     .ok();
 
@@ -32,7 +32,7 @@ async fn test_managed_provider_creation() {
 async fn test_managed_provider_with_batching() {
     // Initialize CryptoProvider for rustls
     rustls::crypto::CryptoProvider::install_default(
-        rustls::crypto::ring::default_provider(),
+        rustls::crypto::aws_lc_rs::default_provider(),
     )
     .ok();
 
@@ -120,7 +120,7 @@ fn test_nonce_generation() {
 
 #[test]
 fn test_nonce_isolation() {
-    use alloy::primitives::Address;
+    use alloy_primitives::Address;
     use ferrofluid::providers::nonce::NonceManager;
 
     let manager = NonceManager::new(true);

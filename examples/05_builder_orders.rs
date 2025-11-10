@@ -1,7 +1,7 @@
 //! Example of using builder functionality for orders
 
-use alloy::primitives::{address, B256};
-use alloy::signers::local::PrivateKeySigner;
+use alloy_primitives::{address, B256};
+use alloy_signer_local::PrivateKeySigner;
 use ferrofluid::{providers::ExchangeProvider, signers::AlloySigner};
 
 #[tokio::main]

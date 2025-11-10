@@ -1,5 +1,5 @@
-use alloy::primitives::Address;
-use alloy::signers::local::PrivateKeySigner;
+use alloy_primitives::Address;
+use alloy_signer_local::PrivateKeySigner;
 use ferrofluid::constants::TIF_GTC;
 use ferrofluid::types::requests::OrderRequest;
 use ferrofluid::{signers::AlloySigner, ExchangeProvider};
