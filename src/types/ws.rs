@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use alloy::primitives::Address;
+use alloy_primitives::Address;
 use serde::{Deserialize, Serialize};
 
 // Subscription types

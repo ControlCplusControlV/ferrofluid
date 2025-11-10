@@ -9,7 +9,6 @@ pub mod utils;
 pub use constants::Network;
 pub use errors::HyperliquidError;
 pub use providers::{
-    ExchangeProvider, InfoProvider, 
-    WsProvider, RawWsProvider, ManagedWsProvider, WsConfig,
-    ManagedExchangeProvider
+    ExchangeProvider, InfoProvider, ManagedExchangeProvider, ManagedWsProvider,
+    RawWsProvider, WsConfig, WsProvider,
 };

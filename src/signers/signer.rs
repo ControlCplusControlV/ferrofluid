@@ -1,7 +1,6 @@
-use alloy::{
-    primitives::{Address, B256, Parity, U256},
-    signers::Signer,
-};
+use alloy_primitives::{Address, B256, U256};
+use alloy_signer::Signer;
+use alloy_signer_local::PrivateKeySigner;
 use async_trait::async_trait;
 
 #[derive(Debug, Clone)]
@@ -35,20 +34,15 @@ pub struct AlloySigner<S: Signer> {
 
 // Direct implementation for PrivateKeySigner
 #[async_trait]
-impl HyperliquidSigner for alloy::signers::local::PrivateKeySigner {
+impl HyperliquidSigner for PrivateKeySigner {
     async fn sign_hash(&self, hash: B256) -> Result<HyperliquidSignature, SignerError> {
         let sig = <Self as Signer>::sign_hash(self, &hash)
             .await
             .map_err(|e| SignerError::SigningFailed(e.to_string()))?;
 
-        // Convert Parity to v value (27 or 28)
-        let v = match sig.v() {
-            Parity::Eip155(v) => v,
-            Parity::NonEip155(true) => 28,
-            Parity::NonEip155(false) => 27,
-            Parity::Parity(true) => 28,
-            Parity::Parity(false) => 27,
-        };
+        // In alloy 1.x, v() returns a bool indicating the parity
+        // false = 27, true = 28
+        let v = if sig.v() { 28 } else { 27 };
 
         Ok(HyperliquidSignature {
             r: sig.r(),
@@ -74,14 +68,9 @@ where
             .await
             .map_err(|e| SignerError::SigningFailed(e.to_string()))?;
 
-        // Convert Parity to v value (27 or 28)
-        let v = match sig.v() {
-            Parity::Eip155(v) => v,
-            Parity::NonEip155(true) => 28,
-            Parity::NonEip155(false) => 27,
-            Parity::Parity(true) => 28,
-            Parity::Parity(false) => 27,
-        };
+        // In alloy 1.x, v() returns a bool indicating the parity
+        // false = 27, true = 28
+        let v = if sig.v() { 28 } else { 27 };
 
         Ok(HyperliquidSignature {
             r: sig.r(),
@@ -97,7 +86,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use alloy::{primitives::b256, signers::local::PrivateKeySigner};
+    use alloy_primitives::b256;
+    use alloy_signer_local::PrivateKeySigner;
 
     use super::*;
     use crate::types::{Agent, HyperliquidAction, UsdSend, Withdraw};

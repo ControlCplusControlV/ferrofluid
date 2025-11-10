@@ -74,12 +74,12 @@ macro_rules! l1_action {
             const USE_PREFIX: bool = false;
 
             // L1 actions use the Exchange domain with chain ID 1337
-            fn domain(&self) -> alloy::sol_types::Eip712Domain {
-                alloy::sol_types::eip712_domain! {
+            fn domain(&self) -> alloy_sol_types::Eip712Domain {
+                alloy_sol_types::eip712_domain! {
                     name: "Exchange",
                     version: "1",
                     chain_id: 1337u64,
-                    verifying_contract: alloy::primitives::address!("0000000000000000000000000000000000000000"),
+                    verifying_contract: alloy_primitives::address!("0000000000000000000000000000000000000000"),
                 }
             }
 

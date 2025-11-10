@@ -1,5 +1,5 @@
-use alloy::primitives::{Address, B256, U256, keccak256};
-use alloy::sol_types::Eip712Domain;
+use alloy_primitives::{keccak256, Address, B256, U256};
+use alloy_sol_types::Eip712Domain;
 
 pub trait HyperliquidAction: Sized + serde::Serialize {
     /// The EIP-712 type string (without HyperliquidTransaction: prefix)
@@ -17,11 +17,11 @@ pub trait HyperliquidAction: Sized + serde::Serialize {
     /// Get the EIP-712 domain for this action
     fn domain(&self) -> Eip712Domain {
         let chain_id = self.chain_id().unwrap_or(1); // Default to mainnet
-        alloy::sol_types::eip712_domain! {
+        alloy_sol_types::eip712_domain! {
             name: "HyperliquidSignTransaction",
             version: "1",
             chain_id: chain_id,
-            verifying_contract: alloy::primitives::address!("0000000000000000000000000000000000000000"),
+            verifying_contract: alloy_primitives::address!("0000000000000000000000000000000000000000"),
         }
     }
 
@@ -52,13 +52,13 @@ pub trait HyperliquidAction: Sized + serde::Serialize {
     fn eip712_signing_hash(&self, domain: &Eip712Domain) -> B256 {
         let domain_separator = domain.separator();
         let struct_hash = self.struct_hash();
-        
+
         let mut buf = Vec::with_capacity(66);
         buf.push(0x19);
         buf.push(0x01);
         buf.extend_from_slice(&domain_separator[..]);
         buf.extend_from_slice(&struct_hash[..]);
-        
+
         keccak256(&buf)
     }
 }

@@ -9,7 +9,13 @@ license = "MIT"
 repository = "https://github.com/ControlCplusControlV/ferrofluid"
 
 [dependencies]
-alloy = { version = "0.1", features = [ "full" ] }
+alloy-consensus = { version = "1.1.0", features = ["k256", "serde"] }
+alloy-primitives = "1.4.1"
+alloy-dyn-abi = { version = "1.4.1", features = ["eip712"] }
+alloy-sol-types = "1.1.0"
+alloy-eips = "1.1.0"
+alloy-signer = "1.1.0"
+alloy-signer-local = "1.1.0"
 
 # HTTP client stack
 hyper = { version = "1", features = ["client", "http2"] }

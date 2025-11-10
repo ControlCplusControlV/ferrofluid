@@ -2,12 +2,12 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::Instant;
 
-use alloy::primitives::Address;
+use alloy_primitives::Address;
 use http::{Method, Request};
 use http_body_util::{BodyExt, Full};
 use hyper::body::Bytes;
 use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
-use hyper_util::client::legacy::{Client, connect::HttpConnector};
+use hyper_util::client::legacy::{connect::HttpConnector, Client};
 use hyper_util::rt::TokioExecutor;
 use serde_json::json;
 

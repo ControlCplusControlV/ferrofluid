@@ -2,7 +2,7 @@ use alloy::primitives::Address;
 use alloy::signers::local::PrivateKeySigner;
 use ferrofluid::constants::TIF_GTC;
 use ferrofluid::types::requests::OrderRequest;
-use ferrofluid::{ExchangeProvider, signers::AlloySigner};
+use ferrofluid::{signers::AlloySigner, ExchangeProvider};
 use uuid::Uuid;
 
 #[tokio::main]
