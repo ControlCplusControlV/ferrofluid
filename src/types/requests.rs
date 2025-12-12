@@ -34,13 +34,17 @@ pub struct Limit {
     pub tif: String, // "Alo", "Ioc", "Gtc"
 }
 
+/// Trigger order type for stop-loss and take-profit orders.
+///
+/// **Important**: Field order matters for MessagePack serialization!
+/// The order must match the Hyperliquid Python SDK: isMarket, triggerPx, tpsl
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Trigger {
-    #[serde(rename = "triggerPx")]
-    pub trigger_px: String,
     #[serde(rename = "isMarket")]
     pub is_market: bool,
+    #[serde(rename = "triggerPx")]
+    pub trigger_px: String,
     pub tpsl: String, // "tp" or "sl"
 }
 
@@ -117,8 +121,8 @@ impl OrderRequest {
             sz: sz.into(),
             reduce_only: false,
             order_type: OrderType::Trigger(Trigger {
-                trigger_px: trigger_px.into(),
                 is_market,
+                trigger_px: trigger_px.into(),
                 tpsl: tpsl.into(),
             }),
             cloid: None,
