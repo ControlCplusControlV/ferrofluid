@@ -1,5 +1,5 @@
 use alloy::{
-    primitives::{Address, B256, Parity, U256},
+    primitives::{Address, Parity, B256, U256},
     signers::Signer,
 };
 use async_trait::async_trait;

@@ -1,16 +1,14 @@
 //! Agent wallet management with automatic rotation and safety features
 
-use std::sync::Arc;
-use std::time::{Duration, Instant};
-use alloy::primitives::Address;
-use alloy::signers::local::PrivateKeySigner;
-use tokio::sync::RwLock;
 use crate::{
-    signers::HyperliquidSigner,
-    errors::HyperliquidError,
-    providers::nonce::NonceManager,
+    errors::HyperliquidError, providers::nonce::NonceManager, signers::HyperliquidSigner,
     Network,
 };
+use alloy::primitives::Address;
+use alloy::signers::local::PrivateKeySigner;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
+use tokio::sync::RwLock;
 
 /// Agent wallet with lifecycle tracking
 #[derive(Clone)]
@@ -48,7 +46,7 @@ impl AgentWallet {
             status: AgentStatus::Active,
         }
     }
-    
+
     /// Check if agent should be rotated based on TTL
     pub fn should_rotate(&self, ttl: Duration) -> bool {
         match self.status {
@@ -56,7 +54,7 @@ impl AgentWallet {
             AgentStatus::PendingRotation | AgentStatus::Deregistered => true,
         }
     }
-    
+
     /// Get next nonce for this agent
     pub fn next_nonce(&self) -> u64 {
         self.nonce_manager.next_nonce(None)
@@ -106,70 +104,85 @@ impl<S: HyperliquidSigner + Clone> AgentManager<S> {
             network,
         }
     }
-    
+
     /// Get or create an agent, rotating if necessary
-    pub async fn get_or_rotate_agent(&self, name: &str) -> Result<AgentWallet, HyperliquidError> {
+    pub async fn get_or_rotate_agent(
+        &self,
+        name: &str,
+    ) -> Result<AgentWallet, HyperliquidError> {
         let mut agents = self.agents.write().await;
-        
+
         // Check if we have an active agent
         if let Some(agent) = agents.get(name) {
-            let effective_ttl = self.config.ttl.saturating_sub(self.config.proactive_rotation_buffer);
-            
+            let effective_ttl = self
+                .config
+                .ttl
+                .saturating_sub(self.config.proactive_rotation_buffer);
+
             if !agent.should_rotate(effective_ttl) {
                 return Ok(agent.clone());
             }
-            
+
             // Mark for rotation
             let mut agent_mut = agent.clone();
             agent_mut.status = AgentStatus::PendingRotation;
             agents.insert(name.to_string(), agent_mut);
         }
-        
+
         // Create new agent
         let new_agent = self.create_new_agent(name).await?;
         agents.insert(name.to_string(), new_agent.clone());
-        
+
         Ok(new_agent)
     }
-    
+
     /// Create and approve a new agent
-    async fn create_new_agent(&self, name: &str) -> Result<AgentWallet, HyperliquidError> {
+    async fn create_new_agent(
+        &self,
+        name: &str,
+    ) -> Result<AgentWallet, HyperliquidError> {
         // Generate new key for agent
         let agent_signer = PrivateKeySigner::random();
         let agent_wallet = AgentWallet::new(agent_signer.clone());
-        
+
         // We need to approve this agent using the exchange provider
         // This is a bit circular, but we'll handle it carefully
-        self.approve_agent_internal(agent_wallet.address, Some(name.to_string())).await?;
-        
+        self.approve_agent_internal(agent_wallet.address, Some(name.to_string()))
+            .await?;
+
         Ok(agent_wallet)
     }
-    
+
     /// Internal method to approve agent (will use exchange provider)
-    async fn approve_agent_internal(&self, agent_address: Address, name: Option<String>) -> Result<(), HyperliquidError> {
+    async fn approve_agent_internal(
+        &self,
+        agent_address: Address,
+        name: Option<String>,
+    ) -> Result<(), HyperliquidError> {
         use crate::providers::RawExchangeProvider;
-        
+
         // Create a temporary raw provider just for agent approval
         let raw_provider = match self.network {
             Network::Mainnet => RawExchangeProvider::mainnet(self.master_signer.clone()),
             Network::Testnet => RawExchangeProvider::testnet(self.master_signer.clone()),
         };
-        
+
         // Approve the agent
         raw_provider.approve_agent(agent_address, name).await?;
-        
+
         Ok(())
     }
-    
+
     /// Get all active agents
     pub async fn get_active_agents(&self) -> Vec<(String, AgentWallet)> {
         let agents = self.agents.read().await;
-        agents.iter()
+        agents
+            .iter()
             .filter(|(_, agent)| agent.status == AgentStatus::Active)
             .map(|(name, agent)| (name.clone(), agent.clone()))
             .collect()
     }
-    
+
     /// Mark an agent as deregistered
     pub async fn mark_deregistered(&self, name: &str) {
         let mut agents = self.agents.write().await;
@@ -177,7 +190,7 @@ impl<S: HyperliquidSigner + Clone> AgentManager<S> {
             agent.status = AgentStatus::Deregistered;
         }
     }
-    
+
     /// Clean up deregistered agents
     pub async fn cleanup_deregistered(&self) {
         let mut agents = self.agents.write().await;
@@ -188,27 +201,27 @@ impl<S: HyperliquidSigner + Clone> AgentManager<S> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_agent_rotation_check() {
         let signer = PrivateKeySigner::random();
         let agent = AgentWallet::new(signer);
-        
+
         // Should not rotate immediately
         assert!(!agent.should_rotate(Duration::from_secs(24 * 60 * 60)));
-        
+
         // Test with zero duration (should always rotate)
         assert!(agent.should_rotate(Duration::ZERO));
     }
-    
+
     #[test]
     fn test_agent_nonce_generation() {
         let signer = PrivateKeySigner::random();
         let agent = AgentWallet::new(signer);
-        
+
         let nonce1 = agent.next_nonce();
         let nonce2 = agent.next_nonce();
-        
+
         assert!(nonce2 > nonce1);
     }
 }

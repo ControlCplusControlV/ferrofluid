@@ -1,6 +1,6 @@
 //! Example of using the WebSocket provider for real-time data
 
-use ferrofluid::{Network, providers::WsProvider, types::ws::Message};
+use ferrofluid::{providers::WsProvider, types::ws::Message, Network};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

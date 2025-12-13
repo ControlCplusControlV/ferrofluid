@@ -1,15 +1,15 @@
 //! Order batching for high-frequency trading strategies
 
+use crate::errors::HyperliquidError;
+use crate::types::requests::{CancelRequest, OrderRequest};
+use crate::types::responses::ExchangeResponseStatus;
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
-use std::pin::Pin;
-use std::future::Future;
-use tokio::sync::{Mutex, mpsc};
+use tokio::sync::{mpsc, Mutex};
 use tokio::time::interval;
 use uuid::Uuid;
-use crate::types::requests::{OrderRequest, CancelRequest};
-use crate::types::responses::ExchangeResponseStatus;
-use crate::errors::HyperliquidError;
 
 type BoxFuture<T> = Pin<Box<dyn Future<Output = T> + Send + 'static>>;
 
@@ -19,7 +19,8 @@ pub struct PendingOrder {
     pub order: OrderRequest,
     pub nonce: u64,
     pub id: Uuid,
-    pub response_tx: mpsc::UnboundedSender<Result<ExchangeResponseStatus, HyperliquidError>>,
+    pub response_tx:
+        mpsc::UnboundedSender<Result<ExchangeResponseStatus, HyperliquidError>>,
 }
 
 /// Cancel with metadata for batching
@@ -28,7 +29,8 @@ pub struct PendingCancel {
     pub cancel: CancelRequest,
     pub nonce: u64,
     pub id: Uuid,
-    pub response_tx: mpsc::UnboundedSender<Result<ExchangeResponseStatus, HyperliquidError>>,
+    pub response_tx:
+        mpsc::UnboundedSender<Result<ExchangeResponseStatus, HyperliquidError>>,
 }
 
 /// Order type classification for priority batching
@@ -91,57 +93,57 @@ impl OrderBatcher {
     /// Create a new order batcher
     pub fn new(config: BatchConfig) -> (Self, BatcherHandle) {
         let (shutdown_tx, shutdown_rx) = mpsc::channel(1);
-        
+
         let batcher = Self {
             pending_orders: Arc::new(Mutex::new(Vec::new())),
             pending_cancels: Arc::new(Mutex::new(Vec::new())),
             _config: config,
             shutdown_tx,
         };
-        
+
         let handle = BatcherHandle {
             pending_orders: batcher.pending_orders.clone(),
             pending_cancels: batcher.pending_cancels.clone(),
             shutdown_rx,
         };
-        
+
         (batcher, handle)
     }
-    
+
     /// Add an order to the batch queue
     pub async fn add_order(&self, order: OrderRequest, nonce: u64) -> OrderHandle {
         let id = Uuid::new_v4();
         let (tx, rx) = mpsc::unbounded_channel();
-        
+
         let pending = PendingOrder {
             order,
             nonce,
             id,
             response_tx: tx,
         };
-        
+
         self.pending_orders.lock().await.push(pending);
-        
+
         OrderHandle::Pending { id, rx }
     }
-    
+
     /// Add a cancel to the batch queue
     pub async fn add_cancel(&self, cancel: CancelRequest, nonce: u64) -> OrderHandle {
         let id = Uuid::new_v4();
         let (tx, rx) = mpsc::unbounded_channel();
-        
+
         let pending = PendingCancel {
             cancel,
             nonce,
             id,
             response_tx: tx,
         };
-        
+
         self.pending_cancels.lock().await.push(pending);
-        
+
         OrderHandle::Pending { id, rx }
     }
-    
+
     /// Shutdown the batcher
     pub async fn shutdown(self) {
         let _ = self.shutdown_tx.send(()).await;
@@ -157,17 +159,21 @@ pub struct BatcherHandle {
 
 impl BatcherHandle {
     /// Run the batching loop (should be spawned as a task)
-    pub async fn run<F, G>(
-        mut self,
-        mut order_executor: F,
-        mut cancel_executor: G,
-    )
+    pub async fn run<F, G>(mut self, mut order_executor: F, mut cancel_executor: G)
     where
-        F: FnMut(Vec<PendingOrder>) -> BoxFuture<Vec<Result<ExchangeResponseStatus, HyperliquidError>>> + Send,
-        G: FnMut(Vec<PendingCancel>) -> BoxFuture<Vec<Result<ExchangeResponseStatus, HyperliquidError>>> + Send,
+        F: FnMut(
+                Vec<PendingOrder>,
+            )
+                -> BoxFuture<Vec<Result<ExchangeResponseStatus, HyperliquidError>>>
+            + Send,
+        G: FnMut(
+                Vec<PendingCancel>,
+            )
+                -> BoxFuture<Vec<Result<ExchangeResponseStatus, HyperliquidError>>>
+            + Send,
     {
         let mut interval = interval(Duration::from_millis(100)); // Fixed interval for now
-        
+
         loop {
             tokio::select! {
                 _ = interval.tick() => {
@@ -176,14 +182,14 @@ impl BatcherHandle {
                         let mut pending = self.pending_orders.lock().await;
                         std::mem::take(&mut *pending)
                     };
-                    
+
                     if !orders.is_empty() {
                         // Separate ALO from regular orders
-                        let (alo_orders, regular_orders): (Vec<_>, Vec<_>) = 
+                        let (alo_orders, regular_orders): (Vec<_>, Vec<_>) =
                             orders.into_iter().partition(|o| {
                                 o.order.is_alo()
                             });
-                        
+
                         // Process ALO orders first (priority)
                         if !alo_orders.is_empty() {
                             let results = order_executor(alo_orders.clone()).await;
@@ -191,7 +197,7 @@ impl BatcherHandle {
                                 let _ = order.response_tx.send(result);
                             }
                         }
-                        
+
                         // Process regular orders
                         if !regular_orders.is_empty() {
                             let results = order_executor(regular_orders.clone()).await;
@@ -200,13 +206,13 @@ impl BatcherHandle {
                             }
                         }
                     }
-                    
+
                     // Process cancels
                     let cancels = {
                         let mut pending = self.pending_cancels.lock().await;
                         std::mem::take(&mut *pending)
                     };
-                    
+
                     if !cancels.is_empty() {
                         let results = cancel_executor(cancels.clone()).await;
                         for (cancel, result) in cancels.into_iter().zip(results) {
@@ -214,7 +220,7 @@ impl BatcherHandle {
                         }
                     }
                 }
-                
+
                 _ = self.shutdown_rx.recv() => {
                     // Graceful shutdown
                     break;
@@ -239,13 +245,13 @@ impl OrderRequest {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::requests::{OrderType, Limit};
-    
+    use crate::types::requests::{Limit, OrderType};
+
     #[tokio::test]
     async fn test_order_batching() {
         let config = BatchConfig::default();
         let (batcher, _handle) = OrderBatcher::new(config);
-        
+
         // Create a test order
         let order = OrderRequest {
             asset: 0,
@@ -253,13 +259,15 @@ mod tests {
             limit_px: "50000".to_string(),
             sz: "0.1".to_string(),
             reduce_only: false,
-            order_type: OrderType::Limit(Limit { tif: "Gtc".to_string() }),
+            order_type: OrderType::Limit(Limit {
+                tif: "Gtc".to_string(),
+            }),
             cloid: None,
         };
-        
+
         // Add to batch
         let handle = batcher.add_order(order, 123456789).await;
-        
+
         // Should return pending handle
         assert!(matches!(handle, OrderHandle::Pending { .. }));
     }
