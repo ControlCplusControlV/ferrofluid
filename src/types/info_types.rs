@@ -140,7 +140,7 @@ pub struct Leverage {
     pub raw_usd: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MarginSummary {
     pub account_value: String,
@@ -400,4 +400,120 @@ pub struct AssetContext {
     pub oracle_px: String,
     pub premium: String,
     pub prev_day_px: String,
+}
+
+// ==================== Phase 1 New Types ====================
+
+/// Response for metaAndAssetCtxs - perp metadata with asset contexts
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct MetaAndAssetCtxs {
+    pub meta: Meta,
+    pub asset_ctxs: Vec<PerpAssetContext>,
+}
+
+/// Asset context for perpetuals (different from spot AssetContext)
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct PerpAssetContext {
+    pub day_ntl_vlm: String,
+    pub funding: String,
+    pub impact_pxs: Option<Vec<String>>,
+    pub mark_px: String,
+    pub mid_px: Option<String>,
+    pub open_interest: String,
+    pub oracle_px: String,
+    pub premium: Option<String>,
+    pub prev_day_px: String,
+}
+
+/// Response for frontendOpenOrders - open orders with extra frontend metadata
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct FrontendOpenOrder {
+    pub coin: String,
+    pub side: String,
+    pub limit_px: String,
+    pub sz: String,
+    pub oid: u64,
+    pub timestamp: u64,
+    pub orig_sz: String,
+    pub cloid: Option<String>,
+    pub reduce_only: bool,
+    pub order_type: String,
+    pub tif: String,
+    pub trigger_condition: String,
+    pub is_trigger: bool,
+    pub trigger_px: String,
+    pub is_position_tpsl: bool,
+    #[serde(default)]
+    pub children: Option<Vec<FrontendOpenOrder>>,
+}
+
+/// Response for userFillsByTime - fills with aggregation options
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserFillByTime {
+    pub closed_pnl: String,
+    pub coin: String,
+    pub crossed: bool,
+    pub dir: String,
+    pub hash: String,
+    pub oid: u64,
+    pub px: String,
+    pub side: String,
+    pub start_position: String,
+    pub sz: String,
+    pub time: u64,
+    pub fee: String,
+    pub fee_token: String,
+    pub tid: u64,
+    pub cloid: Option<String>,
+}
+
+/// Response for historicalOrders
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct HistoricalOrder {
+    pub order: BasicOrderInfo,
+    pub status: String,
+    pub status_timestamp: u64,
+}
+
+/// Response for subAccounts
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SubAccount {
+    pub sub_account_user: Address,
+    pub name: String,
+    pub master: Address,
+    pub clearinghouse_state: Option<SubAccountClearinghouseState>,
+}
+
+/// Clearinghouse state for sub-account
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SubAccountClearinghouseState {
+    pub margin_summary: MarginSummary,
+    pub cross_margin_summary: MarginSummary,
+    pub withdrawable: String,
+}
+
+/// Response for userRateLimit
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserRateLimit {
+    pub cum_vlm: String,
+    pub n_request_ids: u32,
+    pub n_request_weights: u32,
+    pub n_request_ids_limit: u32,
+    pub n_request_weights_limit: u32,
+}
+
+/// Response for userVaultEquities
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct VaultEquity {
+    pub vault_address: Address,
+    pub equity: String,
 }

@@ -5,6 +5,7 @@ use std::sync::{
     Arc,
 };
 
+use alloy::primitives::Address;
 use dashmap::DashMap;
 use fastwebsockets::{handshake, Frame, OpCode, Role, WebSocket};
 use http_body_util::Empty;
@@ -164,6 +165,38 @@ impl RawWsProvider {
         &mut self,
     ) -> Result<(SubscriptionId, UnboundedReceiver<Message>), HyperliquidError> {
         self.subscribe(Subscription::AllMids).await
+    }
+
+    // ==================== Phase 1 New Subscriptions ====================
+
+    /// Subscribe to best bid/offer updates for a coin
+    pub async fn subscribe_bbo(
+        &mut self,
+        coin: impl Into<Symbol>,
+    ) -> Result<(SubscriptionId, UnboundedReceiver<Message>), HyperliquidError> {
+        let symbol = coin.into();
+        let subscription = Subscription::Bbo {
+            coin: symbol.as_str().to_string(),
+        };
+        self.subscribe(subscription).await
+    }
+
+    /// Subscribe to user's open orders in real-time
+    pub async fn subscribe_open_orders(
+        &mut self,
+        user: Address,
+    ) -> Result<(SubscriptionId, UnboundedReceiver<Message>), HyperliquidError> {
+        let subscription = Subscription::OpenOrders { user };
+        self.subscribe(subscription).await
+    }
+
+    /// Subscribe to user's clearinghouse state in real-time
+    pub async fn subscribe_clearinghouse_state(
+        &mut self,
+        user: Address,
+    ) -> Result<(SubscriptionId, UnboundedReceiver<Message>), HyperliquidError> {
+        let subscription = Subscription::ClearinghouseState { user };
+        self.subscribe(subscription).await
     }
 
     /// Generic subscription method
@@ -459,6 +492,38 @@ impl ManagedWsProvider {
         &self,
     ) -> Result<(SubscriptionId, UnboundedReceiver<Message>), HyperliquidError> {
         self.subscribe(Subscription::AllMids).await
+    }
+
+    // ==================== Phase 1 New Subscriptions ====================
+
+    /// Subscribe to best bid/offer updates for a coin with automatic replay on reconnect
+    pub async fn subscribe_bbo(
+        &self,
+        coin: impl Into<Symbol>,
+    ) -> Result<(SubscriptionId, UnboundedReceiver<Message>), HyperliquidError> {
+        let symbol = coin.into();
+        let subscription = Subscription::Bbo {
+            coin: symbol.as_str().to_string(),
+        };
+        self.subscribe(subscription).await
+    }
+
+    /// Subscribe to user's open orders in real-time with automatic replay on reconnect
+    pub async fn subscribe_open_orders(
+        &self,
+        user: Address,
+    ) -> Result<(SubscriptionId, UnboundedReceiver<Message>), HyperliquidError> {
+        let subscription = Subscription::OpenOrders { user };
+        self.subscribe(subscription).await
+    }
+
+    /// Subscribe to user's clearinghouse state in real-time with automatic replay on reconnect
+    pub async fn subscribe_clearinghouse_state(
+        &self,
+        user: Address,
+    ) -> Result<(SubscriptionId, UnboundedReceiver<Message>), HyperliquidError> {
+        let subscription = Subscription::ClearinghouseState { user };
+        self.subscribe(subscription).await
     }
 
     /// Generic subscription with automatic replay on reconnect

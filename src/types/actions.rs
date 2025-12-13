@@ -282,6 +282,49 @@ pub struct BulkCancelCloid {
     pub cancels: Vec<CancelRequestCloid>,
 }
 
+// ==================== Phase 1 New Actions ====================
+
+/// Schedule automatic order cancellation
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScheduleCancel {
+    pub time: Option<u64>,
+}
+
+/// Create a sub-account
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateSubAccount {
+    pub name: Option<String>,
+}
+
+/// Transfer USD to/from a sub-account
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SubAccountTransfer {
+    pub sub_account_user: String,
+    pub is_deposit: bool,
+    pub usd: u64,
+}
+
+/// Transfer spot tokens to/from a sub-account
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SubAccountSpotTransfer {
+    pub sub_account_user: String,
+    pub is_deposit: bool,
+    pub token: String,
+    pub amount: String,
+}
+
+/// Transfer USD between perp and spot classes (different from spotUser classTransfer)
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UsdClassTransfer {
+    pub amount: String,
+    pub to_perp: bool,
+}
+
 // Types are now imported from requests.rs
 
 // The macros don't handle signature_chain_id, so we need to remove the duplicate trait impls

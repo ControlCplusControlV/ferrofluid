@@ -20,6 +20,10 @@ pub enum Subscription {
     UserFills { user: Address },
     UserFundings { user: Address },
     UserNonFundingLedgerUpdates { user: Address },
+    // Phase 1 new subscriptions
+    Bbo { coin: String },
+    OpenOrders { user: Address },
+    ClearinghouseState { user: Address },
 }
 
 // Incoming message types
@@ -39,6 +43,10 @@ pub enum Message {
     User(User),
     SubscriptionResponse,
     Pong,
+    // Phase 1 new message types
+    Bbo(Bbo),
+    OpenOrders(OpenOrdersWs),
+    ClearinghouseState(ClearinghouseStateWs),
 }
 
 // Market data structures
@@ -314,4 +322,92 @@ impl WsRequest {
             subscription: None,
         }
     }
+}
+
+// ==================== Phase 1 New Message Types ====================
+
+/// Best bid/offer update
+#[derive(Debug, Clone, Deserialize)]
+pub struct Bbo {
+    pub data: BboData,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BboData {
+    pub coin: String,
+    pub time: u64,
+    pub bbo: BboLevel,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct BboLevel {
+    pub bid: PriceLevel,
+    pub ask: PriceLevel,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PriceLevel {
+    pub px: String,
+    pub sz: String,
+}
+
+/// Real-time open orders
+#[derive(Debug, Clone, Deserialize)]
+pub struct OpenOrdersWs {
+    pub data: OpenOrdersWsData,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OpenOrdersWsData {
+    pub user: Address,
+    pub is_snapshot: Option<bool>,
+    pub orders: Vec<BasicOrder>,
+}
+
+/// Real-time clearinghouse state
+#[derive(Debug, Clone, Deserialize)]
+pub struct ClearinghouseStateWs {
+    pub data: ClearinghouseStateWsData,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClearinghouseStateWsData {
+    pub user: Address,
+    pub margin_summary: MarginSummaryWs,
+    pub cross_margin_summary: MarginSummaryWs,
+    pub withdrawable: String,
+    pub asset_positions: Vec<AssetPositionWs>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MarginSummaryWs {
+    pub account_value: String,
+    pub total_margin_used: String,
+    pub total_ntl_pos: String,
+    pub total_raw_usd: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssetPositionWs {
+    pub position: PositionWs,
+    #[serde(rename = "type")]
+    pub type_string: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PositionWs {
+    pub coin: String,
+    pub entry_px: Option<String>,
+    pub liquidation_px: Option<String>,
+    pub margin_used: String,
+    pub position_value: String,
+    pub return_on_equity: String,
+    pub szi: String,
+    pub unrealized_pnl: String,
 }

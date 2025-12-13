@@ -13,7 +13,13 @@ use serde_json::json;
 
 use crate::constants::Network;
 use crate::errors::HyperliquidError;
-use crate::types::info_types::*;
+use crate::types::info_types::{
+    CandlesSnapshotResponse, FrontendOpenOrder, FundingHistoryResponse, HistoricalOrder,
+    L2SnapshotResponse, Meta, MetaAndAssetCtxs, OpenOrdersResponse, OrderStatusResponse,
+    RecentTradesResponse, ReferralResponse, SpotMeta, SpotMetaAndAssetCtxs, SubAccount,
+    UserFeesResponse, UserFillByTime, UserFillsResponse, UserFundingResponse,
+    UserRateLimit, UserStateResponse, UserTokenBalanceResponse, VaultEquity,
+};
 use crate::types::Symbol;
 
 // Rate limiter implementation
@@ -286,6 +292,103 @@ impl InfoProvider {
     ) -> Result<SpotMetaAndAssetCtxs, HyperliquidError> {
         let request = json!({
             "type": "spotMetaAndAssetCtxs"
+        });
+        self.request(request).await
+    }
+
+    // ==================== Phase 1 New Methods ====================
+
+    /// Get perpetual metadata with asset contexts
+    pub async fn meta_and_asset_ctxs(
+        &self,
+    ) -> Result<MetaAndAssetCtxs, HyperliquidError> {
+        let request = json!({
+            "type": "metaAndAssetCtxs"
+        });
+        self.request(request).await
+    }
+
+    /// Get frontend open orders with extra metadata
+    pub async fn frontend_open_orders(
+        &self,
+        user: Address,
+    ) -> Result<Vec<FrontendOpenOrder>, HyperliquidError> {
+        let request = json!({
+            "type": "frontendOpenOrders",
+            "user": user
+        });
+        self.request(request).await
+    }
+
+    /// Get user fills within a time range
+    pub async fn user_fills_by_time(
+        &self,
+        user: Address,
+        start_time: u64,
+        end_time: Option<u64>,
+        aggregate_by_time: Option<bool>,
+    ) -> Result<Vec<UserFillByTime>, HyperliquidError> {
+        let mut request = json!({
+            "type": "userFillsByTime",
+            "user": user,
+            "startTime": start_time
+        });
+
+        if let Some(end) = end_time {
+            request["endTime"] = json!(end);
+        }
+
+        if let Some(aggregate) = aggregate_by_time {
+            request["aggregateByTime"] = json!(aggregate);
+        }
+
+        self.request(request).await
+    }
+
+    /// Get user's historical orders
+    pub async fn historical_orders(
+        &self,
+        user: Address,
+    ) -> Result<Vec<HistoricalOrder>, HyperliquidError> {
+        let request = json!({
+            "type": "historicalOrders",
+            "user": user
+        });
+        self.request(request).await
+    }
+
+    /// Get sub-account information for a user
+    pub async fn sub_accounts(
+        &self,
+        user: Address,
+    ) -> Result<Vec<SubAccount>, HyperliquidError> {
+        let request = json!({
+            "type": "subAccounts",
+            "user": user
+        });
+        self.request(request).await
+    }
+
+    /// Get user's API rate limit information
+    pub async fn user_rate_limit(
+        &self,
+        user: Address,
+    ) -> Result<UserRateLimit, HyperliquidError> {
+        let request = json!({
+            "type": "userRateLimit",
+            "user": user
+        });
+        self.request(request).await
+    }
+
+    /// Get user's vault equity positions
+    pub async fn user_vault_equities(
+        &self,
+        user: Address,
+    ) -> Result<Vec<VaultEquity>, HyperliquidError> {
+        let request = json!({
+            "type": "userVaultEquities",
+            "user": user
         });
         self.request(request).await
     }

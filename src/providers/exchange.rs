@@ -767,6 +767,92 @@ impl<S: HyperliquidSigner> RawExchangeProvider<S> {
         self.send_l1_action("spotUser", &spot_user).await
     }
 
+    // ==================== Phase 1 New Actions ====================
+
+    /// Schedule automatic order cancellation
+    ///
+    /// Set a time at which all open orders will be cancelled.
+    /// Pass `None` to cancel the scheduled cancellation.
+    pub async fn schedule_cancel(
+        &self,
+        time: Option<u64>,
+    ) -> Result<ExchangeResponseStatus> {
+        let action = ScheduleCancel { time };
+        self.send_l1_action("scheduleCancel", &action).await
+    }
+
+    /// Create a sub-account
+    ///
+    /// Sub-accounts are separate trading accounts under the same master account.
+    /// They have isolated margin and positions.
+    pub async fn create_sub_account(
+        &self,
+        name: Option<String>,
+    ) -> Result<ExchangeResponseStatus> {
+        let action = CreateSubAccount { name };
+        self.send_l1_action("createSubAccount", &action).await
+    }
+
+    /// Transfer USD to/from a sub-account
+    ///
+    /// * `sub_account_user` - The sub-account address
+    /// * `is_deposit` - true to deposit to sub-account, false to withdraw from sub-account
+    /// * `usd` - Amount in raw USD (multiply by 1e6 for USDC)
+    pub async fn sub_account_transfer(
+        &self,
+        sub_account_user: Address,
+        is_deposit: bool,
+        usd: u64,
+    ) -> Result<ExchangeResponseStatus> {
+        let action = SubAccountTransfer {
+            sub_account_user: format!("{:#x}", sub_account_user),
+            is_deposit,
+            usd,
+        };
+        self.send_l1_action("subAccountTransfer", &action).await
+    }
+
+    /// Transfer spot tokens to/from a sub-account
+    ///
+    /// * `sub_account_user` - The sub-account address
+    /// * `is_deposit` - true to deposit to sub-account, false to withdraw from sub-account
+    /// * `token` - Token symbol (e.g., "ETH", "BTC")
+    /// * `amount` - Amount as a string
+    pub async fn sub_account_spot_transfer(
+        &self,
+        sub_account_user: Address,
+        is_deposit: bool,
+        token: impl Into<Symbol>,
+        amount: &str,
+    ) -> Result<ExchangeResponseStatus> {
+        let symbol = token.into();
+        let action = SubAccountSpotTransfer {
+            sub_account_user: format!("{:#x}", sub_account_user),
+            is_deposit,
+            token: symbol.as_str().to_string(),
+            amount: amount.to_string(),
+        };
+        self.send_l1_action("subAccountSpotTransfer", &action).await
+    }
+
+    /// Transfer USD between perp and spot classes
+    ///
+    /// This is an alternative to `spot_transfer_to_perp` that takes a string amount.
+    ///
+    /// * `amount` - Amount as a string
+    /// * `to_perp` - true to transfer from spot to perp, false for perp to spot
+    pub async fn usd_class_transfer(
+        &self,
+        amount: &str,
+        to_perp: bool,
+    ) -> Result<ExchangeResponseStatus> {
+        let action = UsdClassTransfer {
+            amount: amount.to_string(),
+            to_perp,
+        };
+        self.send_l1_action("usdClassTransfer", &action).await
+    }
+
     // ==================== Helper Methods ====================
 
     fn current_nonce() -> u64 {
@@ -803,6 +889,12 @@ impl<S: HyperliquidSigner> RawExchangeProvider<S> {
             ApproveAgent(&'a T),
             ApproveBuilderFee(&'a T),
             Withdraw3(&'a T),
+            // Phase 1 new actions
+            ScheduleCancel(&'a T),
+            CreateSubAccount(&'a T),
+            SubAccountTransfer(&'a T),
+            SubAccountSpotTransfer(&'a T),
+            UsdClassTransfer(&'a T),
         }
 
         // Wrap the action based on type
@@ -821,6 +913,12 @@ impl<S: HyperliquidSigner> RawExchangeProvider<S> {
             "approveAgent" => ActionWrapper::ApproveAgent(action),
             "approveBuilderFee" => ActionWrapper::ApproveBuilderFee(action),
             "withdraw3" => ActionWrapper::Withdraw3(action),
+            // Phase 1 new actions
+            "scheduleCancel" => ActionWrapper::ScheduleCancel(action),
+            "createSubAccount" => ActionWrapper::CreateSubAccount(action),
+            "subAccountTransfer" => ActionWrapper::SubAccountTransfer(action),
+            "subAccountSpotTransfer" => ActionWrapper::SubAccountSpotTransfer(action),
+            "usdClassTransfer" => ActionWrapper::UsdClassTransfer(action),
             _ => {
                 return Err(HyperliquidError::InvalidRequest(format!(
                     "Unknown action type: {}",
