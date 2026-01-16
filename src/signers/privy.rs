@@ -1,6 +1,4 @@
-use alloy::{
-    primitives::{Address, B256},
-};
+use alloy::primitives::{Address, B256};
 use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
 use reqwest::{Client, StatusCode};
@@ -75,9 +73,9 @@ impl PrivySigner {
             .map_err(|_| PrivyError::MissingEnvVar("PRIVY_APP_ID".to_string()))?;
         let secret = std::env::var("PRIVY_SECRET")
             .map_err(|_| PrivyError::MissingEnvVar("PRIVY_SECRET".to_string()))?;
-        
+
         let creds = general_purpose::STANDARD.encode(format!("{app_id}:{secret}"));
-        
+
         Ok(Self {
             client: Arc::new(Client::builder().build()?),
             wallet_id,
@@ -95,7 +93,7 @@ impl PrivySigner {
         secret: String,
     ) -> Result<Self, PrivyError> {
         let creds = general_purpose::STANDARD.encode(format!("{app_id}:{secret}"));
-        
+
         Ok(Self {
             client: Arc::new(Client::builder().build()?),
             wallet_id,
@@ -126,7 +124,7 @@ impl PrivySigner {
             let txt = resp.text().await.unwrap_or_default();
             return Err(PrivyError::Api(status, txt));
         }
-        
+
         Ok(resp.json::<T>().await?)
     }
 }
@@ -146,7 +144,7 @@ impl HyperliquidSigner for PrivySigner {
     async fn sign_hash(&self, hash: B256) -> Result<HyperliquidSignature, SignerError> {
         // Convert hash to hex string with 0x prefix
         let hash_hex = format!("0x{}", hex::encode(hash));
-        
+
         // Use secp256k1_sign for raw hash signing
         let body = json!({
             "method": "secp256k1_sign",
@@ -155,38 +153,39 @@ impl HyperliquidSigner for PrivySigner {
             }
         });
 
-        let resp: SignResponse = self.rpc(body)
+        let resp: SignResponse = self
+            .rpc(body)
             .await
             .map_err(|e| SignerError::SigningFailed(e.to_string()))?;
-        
+
         // Parse the signature string (0x-prefixed hex)
-        let sig_hex = resp.data.signature
+        let sig_hex = resp
+            .data
+            .signature
             .strip_prefix("0x")
             .unwrap_or(&resp.data.signature);
-        
-        let sig_bytes = hex::decode(sig_hex)
-            .map_err(|e| SignerError::SigningFailed(format!("Invalid hex signature: {}", e)))?;
-        
+
+        let sig_bytes = hex::decode(sig_hex).map_err(|e| {
+            SignerError::SigningFailed(format!("Invalid hex signature: {}", e))
+        })?;
+
         if sig_bytes.len() != 65 {
-            return Err(SignerError::SigningFailed(
-                format!("Invalid signature length: expected 65, got {}", sig_bytes.len())
-            ));
+            return Err(SignerError::SigningFailed(format!(
+                "Invalid signature length: expected 65, got {}",
+                sig_bytes.len()
+            )));
         }
-        
+
         // Extract r, s, v from the signature bytes
         let mut r_bytes = [0u8; 32];
         let mut s_bytes = [0u8; 32];
         r_bytes.copy_from_slice(&sig_bytes[0..32]);
         s_bytes.copy_from_slice(&sig_bytes[32..64]);
         let v = sig_bytes[64];
-        
+
         // Convert v to EIP-155 format if needed
-        let v = if v < 27 {
-            v + 27
-        } else {
-            v
-        };
-        
+        let v = if v < 27 { v + 27 } else { v };
+
         Ok(HyperliquidSignature {
             r: alloy::primitives::U256::from_be_bytes(r_bytes),
             s: alloy::primitives::U256::from_be_bytes(s_bytes),
@@ -212,7 +211,7 @@ mod tests {
             "test-wallet-id".to_string(),
             address!("0000000000000000000000000000000000000000"),
         );
-        
+
         match result {
             Err(PrivyError::MissingEnvVar(var)) => {
                 assert!(var == "PRIVY_APP_ID" || var == "PRIVY_SECRET");

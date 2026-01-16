@@ -42,7 +42,7 @@ impl OrderTracker {
             status: OrderStatus::Pending,
             response: None,
         };
-        
+
         let mut orders = self.orders.write().unwrap();
         orders.insert(cloid, tracked);
     }
