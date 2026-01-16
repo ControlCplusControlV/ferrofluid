@@ -39,6 +39,7 @@ impl NonceManager {
             .as_millis() as u64;
 
         // Get counter increment
+        #[allow(clippy::unnecessary_unwrap)] // Rust 2024
         let counter = if self.isolate_per_address && address.is_some() {
             let addr = address.unwrap();
             self.counters
