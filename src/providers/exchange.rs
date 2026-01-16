@@ -1117,7 +1117,7 @@ impl<'a, S: HyperliquidSigner> OrderBuilder<'a, S> {
 }
 
 impl<S: HyperliquidSigner> RawExchangeProvider<S> {
-    pub fn order(&self, asset: u32) -> OrderBuilder<S> {
+    pub fn order(&self, asset: u32) -> OrderBuilder<'_, S> {
         OrderBuilder::new(self, asset)
     }
 }

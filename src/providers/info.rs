@@ -292,7 +292,7 @@ impl InfoProvider {
 
     // ==================== Builder Pattern Methods ====================
 
-    pub fn candles(&self, coin: impl Into<Symbol>) -> CandlesRequestBuilder {
+    pub fn candles(&self, coin: impl Into<Symbol>) -> CandlesRequestBuilder<'_> {
         CandlesRequestBuilder {
             provider: self,
             coin: coin.into(),
@@ -302,7 +302,7 @@ impl InfoProvider {
         }
     }
 
-    pub fn funding_history(&self, coin: impl Into<Symbol>) -> FundingHistoryBuilder {
+    pub fn funding_history(&self, coin: impl Into<Symbol>) -> FundingHistoryBuilder<'_> {
         FundingHistoryBuilder {
             provider: self,
             coin: coin.into(),
