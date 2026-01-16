@@ -8,6 +8,9 @@ authors = ["Copy Paste"]
 license = "MIT"
 repository = "https://github.com/ControlCplusControlV/ferrofluid"
 
+[lib]
+path = "src/lib.rs"
+
 [dependencies]
 alloy = { version = "1.0", features = [ "full" ] }
 
