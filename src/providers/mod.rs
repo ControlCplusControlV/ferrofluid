@@ -7,20 +7,17 @@ pub mod order_tracker;
 pub mod websocket;
 
 // Raw providers (backwards compatibility)
-pub use exchange::RawExchangeProvider as ExchangeProvider;
-pub use info::InfoProvider;
-pub use websocket::RawWsProvider as WsProvider;
-
-// Explicit raw exports
-pub use exchange::RawExchangeProvider;
-pub use websocket::RawWsProvider;
-
-// Managed providers
-pub use exchange::{ManagedExchangeConfig, ManagedExchangeProvider};
-pub use websocket::{ManagedWsProvider, WsConfig};
-
 // Common types
 pub use batcher::OrderHandle;
 pub use exchange::OrderBuilder;
+pub use exchange::RawExchangeProvider as ExchangeProvider;
+// Explicit raw exports
+pub use exchange::RawExchangeProvider;
+// Managed providers
+pub use exchange::{ManagedExchangeConfig, ManagedExchangeProvider};
+pub use info::InfoProvider;
 pub use info::RateLimiter;
+pub use websocket::RawWsProvider as WsProvider;
+pub use websocket::RawWsProvider;
 pub use websocket::SubscriptionId;
+pub use websocket::{ManagedWsProvider, WsConfig};

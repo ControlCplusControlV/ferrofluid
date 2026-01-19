@@ -1,12 +1,13 @@
 //! Tests for ManagedExchangeProvider
 
+use std::time::Duration;
+
 use alloy::signers::local::PrivateKeySigner;
 use ferrofluid::{
     constants::*,
     providers::{ManagedExchangeProvider, OrderHandle},
     types::requests::{Limit, OrderRequest, OrderType},
 };
-use std::time::Duration;
 
 #[tokio::test]
 async fn test_managed_provider_creation() {

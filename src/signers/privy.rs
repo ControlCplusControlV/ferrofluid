@@ -1,10 +1,11 @@
+use std::{error::Error, fmt, sync::Arc};
+
 use alloy::primitives::{Address, B256};
 use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
 use reqwest::{Client, StatusCode};
 use serde::Deserialize;
 use serde_json::{json, Value};
-use std::{error::Error, fmt, sync::Arc};
 
 use crate::signers::{HyperliquidSignature, HyperliquidSigner, SignerError};
 
@@ -200,8 +201,9 @@ impl HyperliquidSigner for PrivySigner {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use alloy::primitives::address;
+
+    use super::*;
 
     #[test]
     fn test_privy_signer_creation() {

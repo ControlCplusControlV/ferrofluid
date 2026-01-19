@@ -1137,12 +1137,13 @@ impl<S: HyperliquidSigner> RawExchangeProvider<S> {
 
 // ==================== Managed Exchange Provider ====================
 
+use tokio::sync::Mutex as TokioMutex;
+
 use crate::providers::{
     agent::{AgentConfig, AgentManager, AgentWallet},
     batcher::{BatchConfig, OrderBatcher, OrderHandle},
     nonce::NonceManager,
 };
-use tokio::sync::Mutex as TokioMutex;
 
 /// Configuration for managed exchange provider
 #[derive(Clone, Debug)]

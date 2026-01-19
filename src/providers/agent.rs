@@ -1,14 +1,16 @@
 //! Agent wallet management with automatic rotation and safety features
 
+use std::sync::Arc;
+use std::time::{Duration, Instant};
+
+use alloy::primitives::Address;
+use alloy::signers::local::PrivateKeySigner;
+use tokio::sync::RwLock;
+
 use crate::{
     errors::HyperliquidError, providers::nonce::NonceManager, signers::HyperliquidSigner,
     Network,
 };
-use alloy::primitives::Address;
-use alloy::signers::local::PrivateKeySigner;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
-use tokio::sync::RwLock;
 
 /// Agent wallet with lifecycle tracking
 #[derive(Clone)]

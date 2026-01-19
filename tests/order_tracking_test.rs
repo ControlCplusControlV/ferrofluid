@@ -1,11 +1,12 @@
 #[cfg(test)]
 mod tests {
+    use std::sync::Once;
+
     use alloy::signers::local::PrivateKeySigner;
     use ferrofluid::{
         constants::TIF_GTC, signers::AlloySigner, types::requests::OrderRequest,
         ExchangeProvider,
     };
-    use std::sync::Once;
     use uuid::Uuid;
 
     static INIT: Once = Once::new();

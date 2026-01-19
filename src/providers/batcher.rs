@@ -1,15 +1,17 @@
 //! Order batching for high-frequency trading strategies
 
-use crate::errors::HyperliquidError;
-use crate::types::requests::{CancelRequest, OrderRequest};
-use crate::types::responses::ExchangeResponseStatus;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
+
 use tokio::sync::{mpsc, Mutex};
 use tokio::time::interval;
 use uuid::Uuid;
+
+use crate::errors::HyperliquidError;
+use crate::types::requests::{CancelRequest, OrderRequest};
+use crate::types::responses::ExchangeResponseStatus;
 
 type BoxFuture<T> = Pin<Box<dyn Future<Output = T> + Send + 'static>>;
 
