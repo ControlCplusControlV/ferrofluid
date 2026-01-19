@@ -1,6 +1,6 @@
 //! Example showing how to use the Symbol type
 
-use ferrofluid::types::{Symbol, symbols};
+use ferrofluid::types::{symbols, Symbol};
 
 fn main() {
     // Using predefined constants

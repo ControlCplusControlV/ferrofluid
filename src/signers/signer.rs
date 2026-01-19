@@ -1,5 +1,5 @@
 use alloy::{
-    primitives::{Address, B256, Parity, U256},
+    primitives::{Address, B256, U256},
     signers::Signer,
 };
 use async_trait::async_trait;
@@ -42,13 +42,7 @@ impl HyperliquidSigner for alloy::signers::local::PrivateKeySigner {
             .map_err(|e| SignerError::SigningFailed(e.to_string()))?;
 
         // Convert Parity to v value (27 or 28)
-        let v = match sig.v() {
-            Parity::Eip155(v) => v,
-            Parity::NonEip155(true) => 28,
-            Parity::NonEip155(false) => 27,
-            Parity::Parity(true) => 28,
-            Parity::Parity(false) => 27,
-        };
+        let v = if sig.v() { 28 } else { 27 };
 
         Ok(HyperliquidSignature {
             r: sig.r(),
@@ -75,13 +69,7 @@ where
             .map_err(|e| SignerError::SigningFailed(e.to_string()))?;
 
         // Convert Parity to v value (27 or 28)
-        let v = match sig.v() {
-            Parity::Eip155(v) => v,
-            Parity::NonEip155(true) => 28,
-            Parity::NonEip155(false) => 27,
-            Parity::Parity(true) => 28,
-            Parity::Parity(false) => 27,
-        };
+        let v = if sig.v() { 28 } else { 27 };
 
         Ok(HyperliquidSignature {
             r: sig.r(),

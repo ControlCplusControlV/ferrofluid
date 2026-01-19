@@ -1210,6 +1210,8 @@ pub fn symbol(s: impl Into<String>) -> Symbol {
 /// ```
 pub mod prelude {
     pub use super::{
+        // Runtime symbol creation
+        symbol,
         // Popular alts
         APT,
         ARB,
@@ -1246,8 +1248,6 @@ pub mod prelude {
         USDC,
 
         WIF,
-        // Runtime symbol creation
-        symbol,
     };
     // Re-export Symbol type for convenience
     pub use crate::types::symbol::Symbol;

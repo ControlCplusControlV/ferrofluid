@@ -1,4 +1,4 @@
-use alloy::primitives::{Address, B256, U256, keccak256};
+use alloy::primitives::{keccak256, Address, B256, U256};
 use alloy::sol_types::Eip712Domain;
 
 pub trait HyperliquidAction: Sized + serde::Serialize {
@@ -52,13 +52,13 @@ pub trait HyperliquidAction: Sized + serde::Serialize {
     fn eip712_signing_hash(&self, domain: &Eip712Domain) -> B256 {
         let domain_separator = domain.separator();
         let struct_hash = self.struct_hash();
-        
+
         let mut buf = Vec::with_capacity(66);
         buf.push(0x19);
         buf.push(0x01);
         buf.extend_from_slice(&domain_separator[..]);
         buf.extend_from_slice(&struct_hash[..]);
-        
+
         keccak256(&buf)
     }
 }
